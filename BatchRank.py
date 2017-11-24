@@ -18,7 +18,7 @@ class BatchRank(object):
 		#Time steps
 		self.T = 1000
 		#display set to hold items in k positions
-		self.display = np.zeros(k)
+		self.display = np.zeros(k+1)
 
 		#Initialization for clicks and views of documents
 		self.C_bl = np.zeros((2*k+1, T, self.d_n))
@@ -81,8 +81,8 @@ class BatchRank(object):
 		#update number of clicks and views
 		for k in range(I[b,0],I[b,1]+1):
 			if self.N_bl[self.display[k]] == n_min:
-				self.C_bl += cl[k]
-				self.N_bl += 1
+				self.C_bl[b,l,self.display[k]] += cl[k]
+				self.N_bl[b,l,self.display[k]] += 1
 
 	def UpdateBatch(self,b,t):
 		l = self.l[b]
