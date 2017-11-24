@@ -1,0 +1,7 @@
+*.pyc
+.idea
+build
+.classpath
+.project
+.settings
+.DS_Store
