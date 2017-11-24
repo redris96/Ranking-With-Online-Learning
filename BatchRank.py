@@ -60,7 +60,7 @@ class BatchRank(object):
 		#sort them based on number of times displayed
 		least_all = np.argsort(self.N_bl[b,l])
 		#get only ones in current batch
-		least_viewed = [least_all[i] for i in self.B[bl]]
+		least_viewed = [least_all[i] for i in range(self.d_n) if least_all[i] in self.B[bl]]
 		#random positions
 		pos_rand = shuffle(range(1,len_b+1))
 		#Put the items positions to be displayed
@@ -71,7 +71,7 @@ class BatchRank(object):
 	def CollectClicks(self,b,t):
 		l = self.l[b]
 		bl = get_key(b,l)
-		n_min = min(self.N_bl[b,l] for i in self.B[bl])
+		n_min = min(self.N_bl[b,l,i] for i in self.B[bl])
 		len_b = len_batch(b)
 		#click array
 		cl = np.zeros(len_b)
@@ -91,7 +91,7 @@ class BatchRank(object):
 		Up = np.array(self.b_n)
 		Low = np.array(self.b_n)
 		bl = get_key(b,l)
-		if min(self.N_bl[b,l] for i in self.B[bl]) == nl:
+		if min(self.N_bl[b,l,i] for i in self.B[bl]) == nl:
 			for d in self.B[bl]:
 				Up[d] = #UpperBound(d)
 				Low[d] = #LowerBound(d)
@@ -100,7 +100,7 @@ class BatchRank(object):
 		low_all = np.argsort(Low)[::-1]
 		#get only ones in current batch
 		bl = get_key(b,l)
-		low_bound = [low_all[i] for i in self.B[bl]]
+		low_bound = [low_all[i] for i in range(self.d_n) if low_all[i] in self.B[bl]]
 		len_b = len_batch(b)
 
 		B_plus = set(low_bound[:len_b])
