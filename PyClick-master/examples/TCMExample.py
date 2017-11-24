@@ -9,6 +9,7 @@ from pyclick.click_models.task_centric.SearchTask import SearchTask
 from pyclick.click_models.task_centric.TCM import TCM
 from pyclick.utils.Utils import Utils
 from pyclick.utils.YandexRelPredChallengeParser import YandexRelPredChallengeParser
+from pyclick.utils.YandexPersonalizedChallengeParser import YandexPersonalizedChallengeParser
 
 
 __author__ = 'Ilya Markov, Aleksandr Chuklin'
@@ -30,7 +31,8 @@ if __name__ == "__main__":
     search_sessions_path = sys.argv[1]
     search_sessions_num = int(sys.argv[2])
 
-    search_sessions = YandexRelPredChallengeParser().parse(search_sessions_path, search_sessions_num)
+    # search_sessions = YandexRelPredChallengeParser().parse(search_sessions_path, search_sessions_num)
+    search_sessions = YandexPersonalizedChallengeParser().parse(search_sessions_path, search_sessions_num)
 
     train_test_split = int(len(search_sessions) * 0.75)
     train_sessions = search_sessions[:train_test_split]
@@ -45,7 +47,7 @@ if __name__ == "__main__":
     print "Training on %d search tasks (%d search sessions, %d unique queries)." % \
           (len(train_tasks), len(train_sessions), len(train_queries))
     print "-------------------------------"
-
+    # print "data ", train_tasks[:5]
     click_model.train(train_tasks)
     print "\tTrained %s click model:\n%r" % (click_model.__class__.__name__, click_model)
 

@@ -16,10 +16,11 @@ from pyclick.click_models.CCM import CCM
 from pyclick.click_models.CTR import DCTR, RCTR, GCTR
 from pyclick.click_models.CM import CM
 from pyclick.click_models.PBM import PBM
-from pyclick.click_models.alternative_inference.BBM import BBM
-from pyclick.click_models.alternative_inference.UBMProbit import UBMProbit
+# from pyclick.click_models.alternative_inference.BBM import BBM
+# from pyclick.click_models.alternative_inference.UBMProbit import UBMProbit
 from pyclick.utils.Utils import Utils
 from pyclick.utils.YandexRelPredChallengeParser import YandexRelPredChallengeParser
+from pyclick.utils.YandexPersonalizedChallengeParser import YandexPersonalizedChallengeParser
 
 
 __author__ = 'Ilya Markov'
@@ -42,7 +43,8 @@ if __name__ == "__main__":
     search_sessions_path = sys.argv[2]
     search_sessions_num = int(sys.argv[3])
 
-    search_sessions = YandexRelPredChallengeParser().parse(search_sessions_path, search_sessions_num)
+    # search_sessions = YandexRelPredChallengeParser().parse(search_sessions_path, search_sessions_num)
+    search_sessions = YandexPersonalizedChallengeParser().parse(search_sessions_path, search_sessions_num)
 
     train_test_split = int(len(search_sessions) * 0.75)
     train_sessions = search_sessions[:train_test_split]
