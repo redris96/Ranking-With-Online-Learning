@@ -12,7 +12,7 @@ class BatchRank(object):
 	def BatchRank(self):
 		#number of documents
 		self.d_n = len(L)
-		#Map list if elemets to numbers for simplicity
+		#Map list of elemets to numbers for simplicity
 		dmap = {l:i for i,l in enumerate(L)}
 
 		#Time steps
@@ -34,7 +34,7 @@ class BatchRank(object):
 		#Batch dictionary key:"get_key(b,l)", value:set of elements
 		#First Batch
 		bl = self.get_key(0,1)
-		self.B = {bl:set(map[i] for i in range(len(L)))}
+		self.B = {bl:set(dmap[i] for i in range(len(L)))}
 		#Stages
 		self.l = np.zeros(2*k+1)
 
@@ -120,7 +120,7 @@ class BatchRank(object):
 			self.B[bl_new] = set([d for d in self.B[bl] if Up[d] > least_val])
 			self.l[b] += 1
 			del self.B[bl]
-			
+
 		elif s > 0:
 			#Split
 
