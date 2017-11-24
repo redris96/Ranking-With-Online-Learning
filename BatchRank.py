@@ -54,6 +54,7 @@ class BatchRank(object):
 
 	def DisplayBatch(b,t):
 		l = self.l[b]
+		bl = get_key(b,l)
 		n_min = min(self.N_bl[b,l,i] for i in self.B[bl])
 		len_b = len_batch(b)
 		#sort them based on number of times displayed
@@ -69,6 +70,7 @@ class BatchRank(object):
 
 	def CollectClicks(self,b,t):
 		l = self.l[b]
+		bl = get_key(b,l)
 		n_min = min(self.N_bl[b,l] for i in self.B[bl])
 		len_b = len_batch(b)
 		#click array
@@ -88,6 +90,7 @@ class BatchRank(object):
 		#Upper and Lower bound
 		Up = np.array(self.b_n)
 		Low = np.array(self.b_n)
+		bl = get_key(b,l)
 		if min(self.N_bl[b,l] for i in self.B[bl]) == nl:
 			for d in self.B[bl]:
 				Up[d] = #UpperBound(d)
