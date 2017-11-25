@@ -52,6 +52,15 @@ class BatchRank(object):
 	def get_key(self,b,l):
 		return str(b) + "," + str(l)
 
+	def DKL(self, p, q):
+		"""Kl divergence for two Bernoulli variables"""
+		if q == 0 or q == 1:
+			if p == q:
+				return 0
+			else:
+				return float('inf')
+		return p*np.log(p/q) + (1-p)*np.log((1-p)/(1-q))
+
 	def DisplayBatch(b,t):
 		l = self.l[b]
 		bl = get_key(b,l)
@@ -84,6 +93,29 @@ class BatchRank(object):
 				self.C_bl[b,l,self.display[k]] += cl[k]
 				self.N_bl[b,l,self.display[k]] += 1
 
+
+	def UpperBound(self,b,d,nl):
+		l = self.l[b]
+		c_prob = self.C_bl(b,l,d) / nl
+		#get q from [c_prob,1]
+		bound = np.log(self.T) + 2*np.log(np.log(slef.T))
+		q = c_prob
+		while nl * self.DKL(c_prob,q) < bound and q <= 1:
+			q += 0.1
+		dkl = self.DKL(c_prob,q-0.1)
+		return nl * dkl
+
+	def LowerBound(self,b,d,nl):
+		l = self.l[b]
+		c_prob = self.C_bl(b,l,d) / nl
+		#get q from [c_prob,1]
+		bound = np.log(self.T) + 2*np.log(np.log(slef.T))
+		q = 0
+		while nl * self.DKL(c_prob,q) < bound and q < c_prob:
+			q += 0.1
+		dkl = self.DKL(c_prob,q-0.1)
+		return nl * dkl
+
 	def UpdateBatch(self,b,t):
 		l = self.l[b]
 		nl = 16 * pow(2,-l) * np.log(self.T)
@@ -93,8 +125,8 @@ class BatchRank(object):
 		bl = get_key(b,l)
 		if min(self.N_bl[b,l,i] for i in self.B[bl]) == nl:
 			for d in self.B[bl]:
-				Up[d] = #UpperBound(d)
-				Low[d] = #LowerBound(d)
+				Up[d] = self.UpperBound(b,d,nl)
+				Low[d] = self.LowerBound(b,d,nl)
 
 		#sort them based on Lower Bound in descending order
 		low_all = np.argsort(Low)[::-1]
