@@ -42,7 +42,7 @@ class BatchRanker(object):
 			for b in self.A:
 				self.DisplayBatch(b,t)
 			for b in self.A:
-				self.CollectClick(b,t)
+				self.CollectClicks(b,t)
 			for b in self.A:
 				self.UpdateBatch(b,t)
 
@@ -66,6 +66,7 @@ class BatchRanker(object):
 	def DisplayBatch(self,b,t):
 		l = self.l[b]
 		bl = self.get_key(b,l)
+		print b,l, self.B[bl]
 		n_min = min(self.N_bl[b,l,i] for i in self.B[bl])
 		len_b = self.len_batch(b)
 		#sort them based on number of times displayed
@@ -78,23 +79,25 @@ class BatchRanker(object):
 		# print least_viewed, pos_rand
 		#Put the items positions to be displayed
 		for k in range(self.I[b,0],self.I[b,1]+1):
-			self.display[k] = least_viewed[pos_rand[k-self.I[b,0]+1]]
+			# print k,self.I[b,0]
+			# print len(least_viewed), len(pos_rand)
+			self.display[k] = least_viewed[pos_rand[k-self.I[b,0]]]
 
 
 	def CollectClicks(self,b,t):
 		l = self.l[b]
-		bl = get_key(b,l)
+		bl = self.get_key(b,l)
 		n_min = min(self.N_bl[b,l,i] for i in self.B[bl])
-		len_b = len_batch(b)
+		len_b = self.len_batch(b)
 		#click array
 		cl = np.zeros(len_b)
 		#get clicks
 		# ? Model.click() ??
-		cl = self.Model.click(self.display, I[b,0], I[b,1])
+		cl = self.Model.click(self.display, self.I[b,0], self.I[b,1])
 
 		#update number of clicks and views
-		for k in range(I[b,0],I[b,1]+1):
-			if self.N_bl[self.display[k]] == n_min:
+		for k in range(self.I[b,0],self.I[b,1]+1):
+			if self.N_bl[b,l,self.display[k]] == n_min:
 				self.C_bl[b,l,self.display[k]] += cl[k]
 				self.N_bl[b,l,self.display[k]] += 1
 
@@ -108,6 +111,7 @@ class BatchRanker(object):
 		while nl * self.DKL(c_prob,q) < bound and q <= 1:
 			q += 0.1
 		dkl = self.DKL(c_prob,q-0.1)
+		print "dkl ", dkl
 		return nl * dkl
 
 	def LowerBound(self,b,d,nl):
@@ -125,61 +129,65 @@ class BatchRanker(object):
 		l = self.l[b]
 		nl = 16 * pow(2,-l) * np.log(self.T)
 		#Upper and Lower bound
-		Up = np.array(self.b_n)
-		Low = np.array(self.b_n)
-		bl = get_key(b,l)
+		Up = np.zeros(self.d_n)
+		Low = np.zeros(self.d_n)
+		# print self.d_n,len(Low)
+		bl = self.get_key(b,l)
+		print min(self.N_bl[b,l,i] for i in self.B[bl]), nl
 		if min(self.N_bl[b,l,i] for i in self.B[bl]) == nl:
 			for d in self.B[bl]:
 				Up[d] = self.UpperBound(b,d,nl)
 				Low[d] = self.LowerBound(b,d,nl)
 
-		#sort them based on Lower Bound in descending order
-		low_all = np.argsort(Low)[::-1]
-		#get only ones in current batch
-		bl = get_key(b,l)
-		low_bound = [low_all[i] for i in range(self.d_n) if low_all[i] in self.B[bl]]
-		len_b = len_batch(b)
+			#sort them based on Lower Bound in descending order
+			low_all = np.argsort(Low)[::-1]
+			# print len(low_all), len(Low)
+			#get only ones in current batch
+			bl = self.get_key(b,l)
+			low_bound = [low_all[i] for i in range(self.d_n) if low_all[i] in self.B[bl]]
+			len_b = self.len_batch(b)
 
-		B_plus = set(low_bound[:len_b])
-		B_minus = self.B[bl] - B_plus
+			B_plus = set(low_bound[:len_b])
+			B_minus = self.B[bl] - B_plus
 
-		#Find a split at the position with the highest rank
-		s = 0
-		max_u = max(Up[i] for i in B_minus)
-		for k in range(len_b):
-			if Low[low_bound[k]] > max_u:
-				s = k
+			#Find a split at the position with the highest rank
+			s = 0
+			max_u = max(Up[i] for i in B_minus)
+			for k in range(len_b):
+				if Low[low_bound[k]] > max_u:
+					s = k
 
-		if s == 0 and (len(self.B[bl]) > len_b):
-			#Next Elimination Stage
+			if s == 0 and (len(self.B[bl]) > len_b):
+				#Next Elimination Stage
 
-			#lower bound of last position in batch
-			least_val = Low[low_bound[len_b-1]]
+				#lower bound of last position in batch
+				least_val = Low[low_bound[len_b-1]]
 
-			bl_new = get_key(b,l+1)
-			self.B[bl_new] = set([d for d in self.B[bl] if Up[d] > least_val])
-			self.l[b] += 1
-			del self.B[bl]
+				bl_new = self.get_key(b,l+1)
+				print Low, Up
+				self.B[bl_new] = set([d for d in self.B[bl] if Up[d] > least_val])
+				self.l[b] += 1
+				del self.B[bl]
 
-		elif s > 0:
-			#Split
+			elif s > 0:
+				#Split
 
-			#Create two new batches: b_max+1, b_max+2
-			self.A = (self.A | set([self.b_max+1, self.b_max+2])) - set([b])
+				#Create two new batches: b_max+1, b_max+2
+				self.A = (self.A | set([self.b_max+1, self.b_max+2])) - set([b])
 
-			#Parameters for batch b_max + 1
-			self.I[self.b_max + 1] = [self.I[b,0], self.I[b,0] + s -1]
-			bl = get_key(self.b_max+1, 0)
-			self.B[bl] = B_plus
-			self.l[self.b_max+1] = 0
+				#Parameters for batch b_max + 1
+				self.I[self.b_max + 1] = [self.I[b,0], self.I[b,0] + s -1]
+				bl = self.get_key(self.b_max+1, 0)
+				self.B[bl] = B_plus
+				self.l[self.b_max+1] = 0
 
-			#Parameters for batch b_max + 2
-			self.I[self.b_max + 2] = [self.I[b,0]+s, self.I[b,1]]
-			bl = get_key(self.b_max+2, 0)
-			self.B[bl] = B_minus
-			self.l[self.b_max+2] = 0
+				#Parameters for batch b_max + 2
+				self.I[self.b_max + 2] = [self.I[b,0]+s, self.I[b,1]]
+				bl = self.get_key(self.b_max+2, 0)
+				self.B[bl] = B_minus
+				self.l[self.b_max+2] = 0
 
-			self.b_max += 2
+				self.b_max += 2
 
 class ClickModel(object):
 	"""Generic class for ClickModel"""
@@ -229,7 +237,7 @@ class CM(ClickModel):
 				return cl
 				print "Error: Document doesn't exist"
 
-L = [i for i in range(11)]
+L = [i for i in range(10)]
 k = 5
 Model = CM(10)
 BR = BatchRanker(L,k,Model)
