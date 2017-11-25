@@ -1,13 +1,13 @@
 import numpy as np
 from random import shuffle
 
-class BatchRank(object):
+class BatchRanker(object):
 	"""Class for BatchRank"""
-	def __init__(self, k, L, Model):
+	def __init__(self, L, k, Model):
 		# super(Ranker, self).__init__()
 		self.L = L
 		self.k = k
-		self.Model = CM(10)
+		self.Model = Model
 		
 	def BatchRank(self):
 		#number of documents
@@ -16,41 +16,43 @@ class BatchRank(object):
 		dmap = {l:i for i,l in enumerate(L)}
 
 		#Time steps
-		self.T = 1000
+		self.T = 10
 		#display set to hold items in k positions
 		self.display = np.zeros(k+1)
 
 		#Initialization for clicks and views of documents
-		self.C_bl = np.zeros((2*k+1, T, self.d_n))
-		self.N_bl = np.zeros((2*k+1, T, self.d_n))
+		self.C_bl = np.zeros((2*k+1, self.T, self.d_n),dtype=int)
+		self.N_bl = np.zeros((2*k+1, self.T, self.d_n),dtype=int)
 
 		#Active batches
-		self.A = set(1)
+		self.A = set([1])
 		#Highest active batch number
 		self.b_max = 1
-		self.I = np.zeros((2k+1, 2))
+		self.I = np.zeros((2*k+1, 2),dtype=int)
 		#Positions in batch
 		self.I[1] = [1,k]
 		#Batch dictionary key:"get_key(b,l)", value:set of elements
 		#First Batch
-		bl = self.get_key(0,1)
+		bl = self.get_key(1,0)
 		self.B = {bl:set(dmap[i] for i in range(len(L)))}
 		#Stages
 		self.l = np.zeros(2*k+1)
 
-		for t in range(1,T+1):
-			for b in A:
+		for t in range(1,self.T+1):
+			for b in self.A:
 				self.DisplayBatch(b,t)
-			for b in A:
+			for b in self.A:
 				self.CollectClick(b,t)
-			for b in A:
+			for b in self.A:
 				self.UpdateBatch(b,t)
 
+		print self.B
+
 	def len_batch(self,b):
-		return  self.I[b,1] - self.I[b,0] + 1
+		return  int(self.I[b,1] - self.I[b,0] + 1)
 
 	def get_key(self,b,l):
-		return str(b) + "," + str(l)
+		return str(b) + "," + str(int(l))
 
 	def DKL(self, p, q):
 		"""Kl divergence for two Bernoulli variables"""
@@ -61,17 +63,19 @@ class BatchRank(object):
 				return float('inf')
 		return p*np.log(p/q) + (1-p)*np.log((1-p)/(1-q))
 
-	def DisplayBatch(b,t):
+	def DisplayBatch(self,b,t):
 		l = self.l[b]
-		bl = get_key(b,l)
+		bl = self.get_key(b,l)
 		n_min = min(self.N_bl[b,l,i] for i in self.B[bl])
-		len_b = len_batch(b)
+		len_b = self.len_batch(b)
 		#sort them based on number of times displayed
 		least_all = np.argsort(self.N_bl[b,l])
 		#get only ones in current batch
 		least_viewed = [least_all[i] for i in range(self.d_n) if least_all[i] in self.B[bl]]
 		#random positions
-		pos_rand = shuffle(range(1,len_b+1))
+		pos_rand = range(1,len_b+1)
+		shuffle(pos_rand)
+		# print least_viewed, pos_rand
 		#Put the items positions to be displayed
 		for k in range(self.I[b,0],self.I[b,1]+1):
 			self.display[k] = least_viewed[pos_rand[k-self.I[b,0]+1]]
@@ -192,7 +196,7 @@ class PBM(ClickModel):
 		# super(PBM, ClickModel).__init__()
 		self.d_n = docs_n
 		self.attr = np.random.random_sample(docs_n,)
-		self.docs = [i for i in range(1,docs_n+1)
+		self.docs = [i for i in range(1,docs_n+1)]
 		self.exam_prob = [self.rank_prob(i) for i in range(1,docs_n+1)]
 
 	def rank_prob(self,i):
@@ -224,3 +228,10 @@ class CM(ClickModel):
 			except:
 				return cl
 				print "Error: Document doesn't exist"
+
+L = [i for i in range(11)]
+k = 5
+Model = CM(10)
+BR = BatchRanker(L,k,Model)
+
+BR.BatchRank()
