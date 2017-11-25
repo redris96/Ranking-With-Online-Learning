@@ -4,10 +4,10 @@ from random import shuffle
 class BatchRank(object):
 	"""Class for BatchRank"""
 	def __init__(self, k, L, Model):
-		super(Ranker, self).__init__()
+		# super(Ranker, self).__init__()
 		self.L = L
 		self.k = k
-		self.Model = Model
+		self.Model = CM(10)
 		
 	def BatchRank(self):
 		#number of documents
@@ -86,6 +86,7 @@ class BatchRank(object):
 		cl = np.zeros(len_b)
 		#get clicks
 		# ? Model.click() ??
+		cl = self.Model.click(self.display, I[b,0], I[b,1])
 
 		#update number of clicks and views
 		for k in range(I[b,0],I[b,1]+1):
@@ -98,7 +99,7 @@ class BatchRank(object):
 		l = self.l[b]
 		c_prob = self.C_bl(b,l,d) / nl
 		#get q from [c_prob,1]
-		bound = np.log(self.T) + 2*np.log(np.log(slef.T))
+		bound = np.log(self.T) + 2*np.log(np.log(self.T))
 		q = c_prob
 		while nl * self.DKL(c_prob,q) < bound and q <= 1:
 			q += 0.1
@@ -109,7 +110,7 @@ class BatchRank(object):
 		l = self.l[b]
 		c_prob = self.C_bl(b,l,d) / nl
 		#get q from [c_prob,1]
-		bound = np.log(self.T) + 2*np.log(np.log(slef.T))
+		bound = np.log(self.T) + 2*np.log(np.log(self.T))
 		q = 0
 		while nl * self.DKL(c_prob,q) < bound and q < c_prob:
 			q += 0.1
@@ -175,3 +176,51 @@ class BatchRank(object):
 			self.l[self.b_max+2] = 0
 
 			self.b_max += 2
+
+class ClickModel(object):
+	"""Generic class for ClickModel"""
+	def __init__(self,docs_n):
+		# super(ClickModel, self).__init__()
+		self.d_n = docs_n
+		self.attr = np.random.random_sample(docs_n,)
+		self.docs = [i for i in range(1,docs_n+1)]
+
+
+class PBM(ClickModel):
+	"""Position Based Model"""
+	def __init__(self, docs_n):
+		# super(PBM, ClickModel).__init__()
+		self.d_n = docs_n
+		self.attr = np.random.random_sample(docs_n,)
+		self.docs = [i for i in range(1,docs_n+1)
+		self.exam_prob = [self.rank_prob(i) for i in range(1,docs_n+1)]
+
+	def rank_prob(self,i):
+		p = 1 - i/self.d_n
+
+	def click(self, arr, start, end):
+		cl = np.zeros(len(arr))
+		for i in range(start,end+1):
+			try:
+				prob_attr = self.attr(arr[i])
+				prob_exam = self.exam_prob(i-start+1)
+				prob_sel = prob_attr * prob_exam
+				cl[i] = np.random.binomial(1, p=prob_sel)
+			except:
+				return cl
+				print "Error: Document doesn't exist"
+
+		
+class CM(ClickModel):
+	"""Cascading Model"""
+
+	def click(self, arr, start, end):
+		cl = np.zeros(len(arr))
+		for i in range(start,end+1):
+			try:
+				prob_attr = self.attr(arr[i])
+				cl[i] = np.random.binomial(1, p=prob_attr)
+				return cl
+			except:
+				return cl
+				print "Error: Document doesn't exist"
