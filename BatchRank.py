@@ -5,8 +5,6 @@ import sys
 import warnings
 warnings.filterwarnings("ignore")
 
-f = open('top_k.txt','w')
-
 np.random.seed(3)
 printer = 0
 
